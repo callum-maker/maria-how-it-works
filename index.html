@@ -258,6 +258,15 @@ flowchart TD
     <tr><td><b>On-device speech-to-text</b></td><td>STT → ~$0</td><td>Removes the listening cost entirely (Whisper/Vosk on the tablet)</td><td>Longer-term · R&amp;D (reliability / battery tradeoffs)</td></tr>
     <tr><td><b>Cache stock phrases</b></td><td>TTS</td><td>Greetings, med reminders, check-ins are spoken often → synthesize once, reuse the audio</td><td>Low effort</td></tr>
   </table>
+  <h3 style="color:#4a2f6e;margin-top:18px">Per resident, at scale — $ / month &amp; year</h3>
+  <table>
+    <tr><th>Active use</th><th>Today <span style="color:#6b7280;font-weight:400">(~$1.50/hr · list · 1 device)</span></th><th>At scale <span style="color:#6b7280;font-weight:400">(~$0.90/hr · concise + committed pricing)</span></th><th>STT-optimized <span style="color:#6b7280;font-weight:400">(~$0.60/hr · + Deepgram / on-device)</span></th></tr>
+    <tr><td>1 hour / day</td><td>$45 /mo · $550 /yr</td><td>$27 /mo · $330 /yr</td><td>$18 /mo · $220 /yr</td></tr>
+    <tr><td>2 hours / day</td><td>$90 /mo · $1,095 /yr</td><td>$54 /mo · $660 /yr</td><td>$36 /mo · $440 /yr</td></tr>
+    <tr><td>5 hours / day</td><td>$225 /mo · $2,740 /yr</td><td>$135 /mo · $1,640 /yr</td><td>$90 /mo · $1,095 /yr</td></tr>
+  </table>
+  <p class="sub" style="margin-top:8px">~30 days/month; active-conversation hours only (idle standby ~free). "At scale" assumes concise replies + Azure committed-use pricing; "STT-optimized" adds a cheaper or on-device speech-to-text. Estimates at list prices as of ~July 2026.</p>
+
   <div class="card" style="margin-top:14px;background:#f0fdf4;border-color:#bbf7d0">
     <h4>📉 Trajectory</h4>
     <p style="color:#166534">Today ~$1.50 / hr (list price, one device) → with concise replies + committed-use pricing, a realistic target is <b>well under $1.00 / active-hour</b> at fleet scale → with on-device STT, lower still. And this is <em>active-conversation</em> cost only — idle standby is ~free, so real per-resident spend tracks actual usage.</p>
