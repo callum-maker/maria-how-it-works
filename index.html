@@ -273,6 +273,41 @@ flowchart TD
     <tr><td><b>On-device speech-to-text</b></td><td>STT → ~$0</td><td>Removes the listening cost entirely (Whisper/Vosk on the tablet)</td><td>Longer-term · R&amp;D (reliability / battery tradeoffs)</td></tr>
     <tr><td><b>Cache stock phrases</b></td><td>TTS</td><td>Greetings, med reminders, check-ins are spoken often → synthesize once, reuse the audio</td><td>Low effort</td></tr>
   </table>
+
+  <h3 style="color:#4a2f6e;margin-top:18px">How we actually get there</h3>
+  <p class="sub">Each lever above, explained — <b>why</b> it saves money and <b>what</b> it takes to flip it on. Grouped from free-today to longer-term R&amp;D.</p>
+
+  <div class="card" style="margin-top:12px">
+    <h4>💸 Free wins we can take today <span style="color:#6b7280;font-weight:400">(no contracts, no migration)</span></h4>
+    <p><b>Concise replies.</b> TTS is billed <em>per character</em> and the brain <em>per token</em> — so a shorter reply cuts <em>both</em> bills at once, and speaks faster. Trimming a typical answer from ~600 to ~380 characters is a ~35% cut on the single most expensive line, achieved purely by tuning the system prompt and capping reply length. No code risk, no vendor change.</p>
+    <p><b>Cache the stock phrases.</b> Greetings, medication reminders, daily check-ins, and little transitions ("let me think about that…") are spoken thousands of times with identical wording. We synthesize each <em>once</em>, save the audio, and replay the file — so those characters leave the TTS bill permanently <em>and</em> play back instantly (no synthesis wait).</p>
+    <p><b>Prompt caching on the brain (already on).</b> Maria's big system prompt — persona, the resident's profile, safety rules — is the same every turn. Anthropic's prompt caching charges only ~10% to <em>re-read</em> that cached block, which is why the brain sits at ~$0.15/hr instead of $0.40+. It's live today; it just keeps paying off as conversations get longer.</p>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <h4>📝 Contract &amp; vendor moves <span style="color:#6b7280;font-weight:400">(unlock at fleet scale)</span></h4>
+    <p><b>Committed-use pricing.</b> Azure Speech (and Anthropic) sell volume commitments: pledge a monthly floor of characters / audio-hours and list prices drop <b>~40–60%</b>. This is a <em>purchasing</em> decision, not an engineering one — once a fleet of tablets generates predictable volume, we sign for the discount and every hour gets cheaper with zero code change.</p>
+    <p><b>Swap in a cheaper speech-to-text provider.</b> Deepgram / AssemblyAI offer streaming recognition at roughly <b>half</b> Azure's per-hour rate with comparable accuracy. Because listening already sits behind one small interface (<code>listen.ts</code>), this is a contained provider swap — not a rewrite — and it stacks on top of the committed-use discount.</p>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <h4>📱 Moving to the edge <span style="color:#6b7280;font-weight:400">(the big one — longer-term R&amp;D)</span></h4>
+    <p><b>On-device speech-to-text → $0.</b> Whisper or Vosk running <em>on the tablet</em> removes the ~$0.55/hr listening bill entirely — no audio ever hits a paid cloud. The gate is reliability: on-device endpointing and accuracy on older, accented, or quiet voices has to match what pushed us onto Azure in the first place. We prove that per-device before switching.</p>
+    <p><b>On-device text-to-speech → ~$0.</b> Local neural voices (Piper, Kokoro, or platform voices) remove the ~$0.77/hr voice bill. This is the <em>hardest</em> tradeoff and the last we'd flip, because <b>warmth is the product</b> — on-device voices aren't yet as natural as Azure's Sonia, and we won't ship a colder Maria to save money. We move only when a local voice is genuinely good enough.</p>
+    <p><b>A small on-device brain for routine turns.</b> A compact local model (Phi / Gemma / Llama-class) can handle simple chit-chat and navigation on-device, while cloud Claude is reserved for the moments that need real warmth or care judgment (grief, confusion, anything sensitive). This hybrid routing keeps the quality exactly where it matters while cutting cloud tokens on everything routine.</p>
+  </div>
+
+  <h3 style="color:#4a2f6e;margin-top:18px">The path, in phases</h3>
+  <table>
+    <tr><th>Phase</th><th>What we do</th><th>~ $ / active hr</th><th>When</th></tr>
+    <tr><td><b>0 · Today</b></td><td>List price, one device</td><td>~$1.50</td><td>Now</td></tr>
+    <tr><td><b>1 · Tune</b></td><td>+ Concise replies, cached stock phrases, prompt caching</td><td>~$1.15</td><td>Now · free</td></tr>
+    <tr><td><b>2 · Contract</b></td><td>+ Azure / Anthropic committed-use pricing</td><td>~$0.70</td><td>At fleet scale · no code</td></tr>
+    <tr><td><b>3 · Migrate</b></td><td>+ Deepgram (or committed) speech-to-text</td><td>~$0.55</td><td>Medium · provider swap</td></tr>
+    <tr><td><b>4 · Edge</b> <span style="color:#6b7280;font-weight:400">(moonshot)</span></td><td>+ On-device STT &amp; TTS + hybrid on-device brain</td><td style="color:#b45309;font-weight:700">~$0.10</td><td>Longer-term · R&amp;D</td></tr>
+  </table>
+  <p class="sub" style="margin-top:8px">Each phase stacks on the last and most are low-risk — the first two together already roughly halve the bill without touching a line of the voice pipeline. The steep drop to the edge phase is real but gated on on-device speech models proving out on reliability <em>and</em> warmth.</p>
+
   <h3 style="color:#4a2f6e;margin-top:18px">Per resident, at scale — $ / month &amp; year</h3>
   <table>
     <tr><th>Active use</th><th>Today <span style="color:#6b7280;font-weight:400">(~$1.50/hr · list · 1 device)</span></th><th>At scale <span style="color:#6b7280;font-weight:400">(~$0.90/hr · concise + committed pricing)</span></th><th>STT-optimized <span style="color:#6b7280;font-weight:400">(~$0.60/hr · + Deepgram / on-device)</span></th></tr>
