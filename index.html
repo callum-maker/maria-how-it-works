@@ -240,110 +240,58 @@ flowchart TD
 
 <section>
   <h2><span class="n">8</span>Unit economics — cost to run, per resident</h2>
-  <p class="sub">What the background technology costs while a resident is <b>actively talking</b> with Maria (idle standby is ~free). Estimates at public list prices (USD, ~July 2026) — volume / committed-use discounts and shorter replies bring these down. Every other service (weather, news, Wikipedia, lyrics, poems, scripture, quotes, jokes, radio, on-device fallback) is free and adds nothing.</p>
+  <p class="sub">Maria now runs as a <b>hosted service</b>: the voice pipeline (speech-in → brain → voice-out) lives on a server, the resident device is a thin client, and audio flows over a managed transport (LiveKit Cloud). Cost accrues only while a resident is <b>actively talking</b> — idle standby is ~free. Below are three honest scenarios: <b>Current</b> (as built today), <b>Realistic</b> (near-term, contained optimizations at modest scale), and <b>Ambitious</b> (heavy optimization / self-hosting the models). Estimates in USD, ~July 2026.</p>
 
-  <h3 style="color:#4a2f6e">Cost per hour of active conversation <span style="color:#6b7280;font-weight:400">(~80 turns/hr)</span></h3>
+  <h3 style="color:#4a2f6e">Cost per hour of active conversation <span style="color:#6b7280;font-weight:400">(~80 turns/hr, concise replies)</span></h3>
   <table>
-    <tr><th>Service</th><th>What drives it</th><th>Assumption</th><th>~ $ / active hour</th></tr>
-    <tr><td>Azure Neural TTS <span style="color:#6b7280">(voice out)</span></td><td>Characters synthesized</td><td>~600 chars/reply × 80 ≈ 48k chars/hr @ $16 / 1M chars</td><td>~$0.77</td></tr>
-    <tr><td>Azure Speech-to-Text <span style="color:#6b7280">(voice in)</span></td><td>Audio-hours recognized</td><td>mic active ~55% of the hour @ $1 / audio-hr</td><td>~$0.55</td></tr>
-    <tr><td>Anthropic Claude <span style="color:#6b7280">(the brain)</span></td><td>Tokens in/out, prompt-cached</td><td>cached reads + ~140-token replies + batched memory extraction (Haiku)</td><td>~$0.15</td></tr>
-    <tr><td>Tavily web search + misc</td><td>Occasional lookups</td><td>~5 searches/hr @ ~$0.008</td><td>~$0.03</td></tr>
-    <tr><td style="font-weight:700">Total</td><td colspan="2" style="color:#6b7280">Voice I/O (Azure) is ~88% of the cost — the AI "brain" is the cheap part.</td><td style="font-weight:700">≈ $1.50 / hr</td></tr>
+    <tr><th>Component</th><th>Current</th><th>Realistic</th><th>Ambitious</th></tr>
+    <tr><td>Speech-to-text <span style="color:#6b7280">(voice in)</span></td><td>Azure STT<br><b>~$0.55</b></td><td>Deepgram Nova-3<br><b>~$0.20</b></td><td>self-hosted Whisper<br><b>~$0.08</b></td></tr>
+    <tr><td>Text-to-speech <span style="color:#6b7280">(voice out)</span></td><td>Azure Neural (concise)<br><b>~$0.20</b></td><td>Azure committed + cached phrases<br><b>~$0.12</b></td><td>self-hosted neural voice<br><b>~$0.03</b></td></tr>
+    <tr><td>Brain <span style="color:#6b7280">(LLM)</span></td><td>Claude Haiku, cached + capped<br><b>~$0.08</b></td><td>Haiku, cached<br><b>~$0.07</b></td><td>cheaper / self-hosted model<br><b>~$0.03</b></td></tr>
+    <tr><td>Transport <span style="color:#6b7280">(LiveKit)</span></td><td>~$0.03</td><td>~$0.02</td><td>~$0.01</td></tr>
+    <tr><td>Server hosting</td><td>~$0.05</td><td>~$0.03</td><td>~$0.02</td></tr>
+    <tr><td style="font-weight:700">Total / active hour</td><td style="font-weight:700">≈ $0.90</td><td style="font-weight:700;color:#2563eb">≈ $0.45</td><td style="font-weight:700;color:#b45309">≈ $0.18</td></tr>
   </table>
+  <p class="sub" style="margin-top:8px">Speech in &amp; out is still the bulk of the bill — which is exactly where the biggest levers are (§9). The brain is already the cheap part: <b>concise replies</b> (short, capped answers) and <b>prompt caching</b> are both live today, cutting the voice and token bills at once and speeding responses up.</p>
 
-  <h3 style="color:#4a2f6e;margin-top:18px">Per resident, by daily usage</h3>
+  <h3 style="color:#4a2f6e;margin-top:18px">Per resident, by daily usage <span style="color:#6b7280;font-weight:400">(~30 days/month)</span></h3>
   <table>
-    <tr><th>Active use</th><th>Per day</th><th>Per month <span style="color:#6b7280;font-weight:400">(~30 d)</span></th><th>Per year</th></tr>
-    <tr><td>1 hour / day</td><td>~$1.50</td><td>~$45</td><td>~$550</td></tr>
-    <tr><td>2 hours / day</td><td>~$3.00</td><td>~$90</td><td>~$1,095</td></tr>
-    <tr><td>5 hours / day</td><td>~$7.50</td><td>~$225</td><td>~$2,740</td></tr>
+    <tr><th>Active use</th><th>Current <span style="color:#6b7280;font-weight:400">(~$0.90/hr)</span></th><th>Realistic <span style="color:#6b7280;font-weight:400">(~$0.45/hr)</span></th><th>Ambitious <span style="color:#6b7280;font-weight:400">(~$0.18/hr)</span></th></tr>
+    <tr><td>1 hour / day</td><td>$27 /mo · $329 /yr</td><td>$13.50 /mo · $164 /yr</td><td>$5.40 /mo · $66 /yr</td></tr>
+    <tr><td>2 hours / day</td><td>$54 /mo · $657 /yr</td><td>$27 /mo · $329 /yr</td><td>$10.80 /mo · $131 /yr</td></tr>
+    <tr><td>5 hours / day</td><td>$135 /mo · $1,643 /yr</td><td>$67.50 /mo · $821 /yr</td><td>$27 /mo · $329 /yr</td></tr>
   </table>
-  <p class="sub" style="margin-top:12px">The two biggest cost levers: <b>(1) reply length</b> — shorter replies cut both TTS and Claude at once — and <b>(2) moving speech-to-text on-device</b>, which would remove the ~$0.55/hr STT line entirely. Not included: one-time tablet hardware, cellular/Wi-Fi data, and the flat EAS Update (OTA) subscription (negligible per resident). Prices drift downward over time as model &amp; voice costs fall.</p>
+  <p class="sub" style="margin-top:12px"><b>Flat infrastructure (not per-resident):</b> LiveKit Cloud is free at demo volume and pennies at scale; the server host is ~$5–20/month and serves many residents at once — both round to ~$0 per resident. Not included: the resident's tablet (one-time, inexpensive) and Wi-Fi. All figures are <em>active-conversation</em> hours only, so real spend tracks actual usage.</p>
 </section>
 
 <section>
-  <h2><span class="n">9</span>Cutting cost as we scale</h2>
-  <p class="sub">Today's ~$1.50 / active-hour (§8) is a <b>list-price, single-device</b> figure — and ~88% of it is the Azure voice, which is exactly where the biggest levers are. Here's the path to materially lower unit cost as we go from one tablet to a fleet. (The AI "brain" is already the cheapest tier at ~10% of cost — not a target.)</p>
-  <table>
-    <tr><th>Lever</th><th>What it cuts</th><th>Approx. impact</th><th>Effort / when</th></tr>
-    <tr><td><b>Concise replies</b></td><td>TTS (billed per character) — and latency</td><td>Fewer characters spoken = proportionally cheaper voice, and faster responses. Same change does both.</td><td>Now · free (prompt tuning)</td></tr>
-    <tr><td><b>Azure committed-use pricing</b></td><td>TTS + STT</td><td>Roughly <b>40–60% off</b> Azure's pay-as-you-go rates at committed volume</td><td>At fleet scale · contract, no code</td></tr>
-    <tr><td><b>Deepgram for speech-to-text</b></td><td>STT (listening)</td><td>~<b>halves</b> the STT line (~$0.55 → ~$0.30 / hr)</td><td>Medium · provider migration</td></tr>
-    <tr><td><b>On-device speech-to-text</b></td><td>STT → ~$0</td><td>Removes the listening cost entirely (Whisper/Vosk on the tablet)</td><td>Longer-term · R&amp;D (reliability / battery tradeoffs)</td></tr>
-    <tr><td><b>Cache stock phrases</b></td><td>TTS</td><td>Greetings, med reminders, check-ins are spoken often → synthesize once, reuse the audio</td><td>Low effort</td></tr>
-  </table>
-
-  <h3 style="color:#4a2f6e;margin-top:18px">How we actually get there</h3>
-  <p class="sub">Each lever above, explained — <b>why</b> it saves money and <b>what</b> it takes to flip it on. Grouped from free-today to longer-term R&amp;D.</p>
+  <h2><span class="n">9</span>Cutting cost as we scale — current → realistic → ambitious</h2>
+  <p class="sub">The same three scenarios, as a path. Most of the first drop is <em>already banked</em> (concise replies + caching are live); the rest is contained vendor swaps and, at the far end, self-hosting the models on your own compute.</p>
 
   <div class="card" style="margin-top:12px">
-    <h4>💸 Free wins we can take today <span style="color:#6b7280;font-weight:400">(no contracts, no migration)</span></h4>
-    <p><b>Concise replies.</b> TTS is billed <em>per character</em> and the brain <em>per token</em> — so a shorter reply cuts <em>both</em> bills at once, and speaks faster. Trimming a typical answer from ~600 to ~380 characters is a ~35% cut on the single most expensive line, achieved purely by tuning the system prompt and capping reply length. No code risk, no vendor change.</p>
-    <p><b>Cache the stock phrases.</b> Greetings, medication reminders, daily check-ins, and little transitions ("let me think about that…") are spoken thousands of times with identical wording. We synthesize each <em>once</em>, save the audio, and replay the file — so those characters leave the TTS bill permanently <em>and</em> play back instantly (no synthesis wait).</p>
-    <p><b>Prompt caching on the brain (already on).</b> Maria's big system prompt — persona, the resident's profile, safety rules — is the same every turn. Anthropic's prompt caching charges only ~10% to <em>re-read</em> that cached block, which is why the brain sits at ~$0.15/hr instead of $0.40+. It's live today; it just keeps paying off as conversations get longer.</p>
+    <h4>✅ Current — ~$0.90 / active hr <span style="color:#6b7280;font-weight:400">(live today)</span></h4>
+    <p>Azure speech-to-text + Azure Neural voice + Claude Haiku, running server-side and delivered over LiveKit. <b>Concise replies</b> and <b>prompt caching</b> are already on — they trim the voice and brain bills versus a naive setup and make her faster. This is what runs right now.</p>
   </div>
-
   <div class="card" style="margin-top:12px">
-    <h4>📝 Contract &amp; vendor moves <span style="color:#6b7280;font-weight:400">(unlock at fleet scale)</span></h4>
-    <p><b>Committed-use pricing.</b> Azure Speech (and Anthropic) sell volume commitments: pledge a monthly floor of characters / audio-hours and list prices drop <b>~40–60%</b>. This is a <em>purchasing</em> decision, not an engineering one — once a fleet of tablets generates predictable volume, we sign for the discount and every hour gets cheaper with zero code change.</p>
-    <p><b>Swap in a cheaper speech-to-text provider.</b> Deepgram / AssemblyAI offer streaming recognition at roughly <b>half</b> Azure's per-hour rate with comparable accuracy. Because listening already sits behind one small interface (<code>listen.ts</code>), this is a contained provider swap — not a rewrite — and it stacks on top of the committed-use discount.</p>
+    <h4>🎯 Realistic — ~$0.45 / active hr <span style="color:#6b7280;font-weight:400">(near-term, contained work)</span></h4>
+    <p><b>Deepgram Nova-3</b> for speech-to-text — roughly halves the single biggest line, and it's one provider swap. <b>Azure committed-use pricing</b> on the voice — ~40–60% off at volume, a purchasing decision with zero code. <b>Cache stock phrases</b> — greetings, med reminders, and check-ins are synthesized once and replayed. None of these change the product experience.</p>
   </div>
-
   <div class="card" style="margin-top:12px">
-    <h4>📱 Moving to the edge <span style="color:#6b7280;font-weight:400">(the big one — longer-term R&amp;D)</span></h4>
-    <p><b>On-device speech-to-text → $0.</b> Whisper or Vosk running <em>on the tablet</em> removes the ~$0.55/hr listening bill entirely — no audio ever hits a paid cloud. The gate is reliability: on-device endpointing and accuracy on older, accented, or quiet voices has to match what pushed us onto Azure in the first place. We prove that per-device before switching.</p>
-    <p><b>On-device text-to-speech → ~$0.</b> Local neural voices (Piper, Kokoro, or platform voices) remove the ~$0.77/hr voice bill. This is the <em>hardest</em> tradeoff and the last we'd flip, because <b>warmth is the product</b> — on-device voices aren't yet as natural as Azure's Sonia, and we won't ship a colder Maria to save money. We move only when a local voice is genuinely good enough.</p>
-    <p><b>A small on-device brain for routine turns.</b> A compact local model (Phi / Gemma / Llama-class) can handle simple chit-chat and navigation on-device, while cloud Claude is reserved for the moments that need real warmth or care judgment (grief, confusion, anything sensitive). This hybrid routing keeps the quality exactly where it matters while cutting cloud tokens on everything routine.</p>
+    <h4>🚀 Ambitious — ~$0.18 / active hr <span style="color:#6b7280;font-weight:400">(self-hosting)</span></h4>
+    <p>Run the models on <b>your own server</b> instead of paying per call: <b>self-hosted Whisper</b> (speech-in becomes compute-only), a <b>self-hosted neural voice</b> (Piper / Kokoro-class, near-free per hour), and a <b>cheaper or self-hosted LLM</b> for routine turns with a premium cloud model reserved for sensitive moments. Marginal cost collapses to electricity + GPU time. The gate is quality — especially voice <em>warmth</em>, which is the product, so the voice is the last piece we'd move.</p>
   </div>
 
-  <h3 style="color:#4a2f6e;margin-top:18px">The path, in phases</h3>
+  <h3 style="color:#4a2f6e;margin-top:18px">The whole picture, per resident</h3>
   <table>
-    <tr><th>Phase</th><th>What we do</th><th>~ $ / active hr</th><th>When</th></tr>
-    <tr><td><b>0 · Today</b></td><td>List price, one device</td><td>~$1.50</td><td>Now</td></tr>
-    <tr><td><b>1 · Tune</b></td><td>+ Concise replies, cached stock phrases, prompt caching</td><td>~$1.15</td><td>Now · free</td></tr>
-    <tr><td><b>2 · Contract</b></td><td>+ Azure / Anthropic committed-use pricing</td><td>~$0.70</td><td>At fleet scale · no code</td></tr>
-    <tr><td><b>3 · Migrate</b></td><td>+ Deepgram (or committed) speech-to-text</td><td>~$0.55</td><td>Medium · provider swap</td></tr>
-    <tr><td><b>4 · Edge</b> <span style="color:#6b7280;font-weight:400">(moonshot)</span></td><td>+ On-device STT &amp; TTS + hybrid on-device brain</td><td style="color:#b45309;font-weight:700">~$0.10</td><td>Longer-term · R&amp;D</td></tr>
+    <tr><th>Active use</th><th>Current <span style="color:#6b7280;font-weight:400">(~$0.90/hr)</span></th><th>Realistic <span style="color:#6b7280;font-weight:400">(~$0.45/hr)</span></th><th>Ambitious <span style="color:#6b7280;font-weight:400">(~$0.18/hr)</span></th></tr>
+    <tr><td>1 hr / day</td><td>$27 /mo · $329 /yr</td><td>$13.50 /mo · $164 /yr</td><td>$5.40 /mo · $66 /yr</td></tr>
+    <tr><td>2 hr / day</td><td>$54 /mo · $657 /yr</td><td>$27 /mo · $329 /yr</td><td>$10.80 /mo · $131 /yr</td></tr>
+    <tr><td>5 hr / day</td><td>$135 /mo · $1,643 /yr</td><td>$67.50 /mo · $821 /yr</td><td>$27 /mo · $329 /yr</td></tr>
   </table>
-  <p class="sub" style="margin-top:8px">Each phase stacks on the last and most are low-risk — the first two together already roughly halve the bill without touching a line of the voice pipeline. The steep drop to the edge phase is real but gated on on-device speech models proving out on reliability <em>and</em> warmth.</p>
-
-  <h3 style="color:#4a2f6e;margin-top:18px">Per resident, at scale — $ / month &amp; year</h3>
-  <table>
-    <tr><th>Active use</th><th>Today <span style="color:#6b7280;font-weight:400">(~$1.50/hr · list · 1 device)</span></th><th>At scale <span style="color:#6b7280;font-weight:400">(~$0.90/hr · concise + committed pricing)</span></th><th>STT-optimized <span style="color:#6b7280;font-weight:400">(~$0.60/hr · + Deepgram / on-device)</span></th></tr>
-    <tr><td>1 hour / day</td><td>$45 /mo · $550 /yr</td><td>$27 /mo · $330 /yr</td><td>$18 /mo · $220 /yr</td></tr>
-    <tr><td>2 hours / day</td><td>$90 /mo · $1,095 /yr</td><td>$54 /mo · $660 /yr</td><td>$36 /mo · $440 /yr</td></tr>
-    <tr><td>5 hours / day</td><td>$225 /mo · $2,740 /yr</td><td>$135 /mo · $1,640 /yr</td><td>$90 /mo · $1,095 /yr</td></tr>
-  </table>
-  <p class="sub" style="margin-top:8px">~30 days/month; active-conversation hours only (idle standby ~free). "At scale" assumes concise replies + Azure committed-use pricing; "STT-optimized" adds a cheaper or on-device speech-to-text. Estimates at list prices as of ~July 2026.</p>
 
   <div class="card" style="margin-top:14px;background:#f0fdf4;border-color:#bbf7d0">
     <h4>📉 Trajectory</h4>
-    <p style="color:#166534">Today ~$1.50 / hr (list price, one device) → with concise replies + committed-use pricing, a realistic target is <b>well under $1.00 / active-hour</b> at fleet scale → with on-device STT, lower still. And this is <em>active-conversation</em> cost only — idle standby is ~free, so real per-resident spend tracks actual usage.</p>
-  </div>
-
-  <h3 style="color:#4a2f6e;margin-top:22px">One resident, fully costed — current vs. ambitious target</h3>
-  <p class="sub">The moonshot: push <b>every</b> paid piece to its floor. Move speech-to-text <b>and</b> text-to-speech fully <b>on-device</b> (the tablet does the listening and speaking — no per-minute cloud billing), keep the brain concise + aggressively cached with a small on-device model handling routine turns and the cloud used only when it truly matters. That collapses the marginal cloud cost by <b>~93%</b>.</p>
-  <table>
-    <tr><th>Cost piece</th><th>Current <span style="color:#6b7280;font-weight:400">(~$ / active hr)</span></th><th>Ambitious target <span style="color:#6b7280;font-weight:400">(~$ / active hr)</span></th><th>The move</th></tr>
-    <tr><td>Voice out — TTS</td><td>$0.77</td><td><b>~$0.02</b></td><td>On-device neural TTS (Piper / Kokoro-class) + cached stock phrases</td></tr>
-    <tr><td>Voice in — STT</td><td>$0.55</td><td><b>$0.00</b></td><td>On-device recognition (Whisper / Vosk) — no cloud audio billing at all</td></tr>
-    <tr><td>Brain — Claude</td><td>$0.15</td><td><b>~$0.06</b></td><td>Concise replies + prompt caching; small on-device model for routine turns, cloud only for sensitive / complex</td></tr>
-    <tr><td>Web lookups + misc</td><td>$0.03</td><td><b>~$0.02</b></td><td>Cache the common answers</td></tr>
-    <tr><td style="font-weight:700">Total</td><td style="font-weight:700">≈ $1.50 / hr</td><td style="font-weight:700;color:#b45309">≈ $0.10 / hr</td><td style="color:#6b7280">~93% lower — roughly <b>10¢ an active hour</b></td></tr>
-  </table>
-
-  <h3 style="color:#4a2f6e;margin-top:18px">What that means per resident</h3>
-  <table>
-    <tr><th>Active use</th><th>Current <span style="color:#6b7280;font-weight:400">(~$1.50/hr)</span></th><th>Ambitious target <span style="color:#6b7280;font-weight:400">(~$0.10/hr)</span></th><th>Saved / year</th></tr>
-    <tr><td>1 hour / day</td><td>$45 /mo · $550 /yr</td><td><b>$3 /mo · $37 /yr</b></td><td>~$513 (93%)</td></tr>
-    <tr><td>2 hours / day</td><td>$90 /mo · $1,095 /yr</td><td><b>$6 /mo · $73 /yr</b></td><td>~$1,022 (93%)</td></tr>
-    <tr><td>5 hours / day</td><td>$225 /mo · $2,740 /yr</td><td><b>$15 /mo · $183 /yr</b></td><td>~$2,557 (93%)</td></tr>
-  </table>
-
-  <div class="card" style="margin-top:14px;background:#fffbeb;border-color:#fde68a">
-    <h4>🚀 The moonshot in one line</h4>
-    <p style="color:#92400e">A resident chatting with Maria <b>2 hours every single day</b> costs about <b>$90/month today → about $6/month</b> at the ambitious target. That's <b>~10¢ per active hour</b>, reached by putting the listening and the voice on the tablet itself and using the cloud brain sparingly. This is the deliberately <em>ambitious end-state</em> — not today's bill — and it depends on on-device speech models maturing to production reliability (battery, accuracy, warmth). The realistic near-term (§9 top) is well under $1/hr; this is where we're aiming it.</p>
+    <p style="color:#166534">Roughly <b>$0.90 → $0.45 → $0.18</b> per active hour, current → realistic → ambitious — about a <b>5× reduction</b> end-to-end, and the first big cut (concise + caching) is <em>already in place</em>. Infrastructure (LiveKit + hosting) stays a rounding error the whole way; the AI services are the entire story, and they get cheaper every quarter. Because it's <em>active-conversation only</em>, a resident who chats ~2 hours a day lands around <b>$54/month today → ~$11/month</b> at the ambitious end.</p>
   </div>
 </section>
 
