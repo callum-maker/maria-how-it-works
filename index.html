@@ -212,7 +212,7 @@ flowchart TD
   <table>
     <tr><th>Service</th><th>Powers</th><th>Notes</th></tr>
     <tr><td>Anthropic — Claude Haiku / Sonnet</td><td>The brain, background extraction, the demo "resident"</td><td>Haiku by default; Sonnet only for grief/distress</td></tr>
-    <tr><td>Azure Speech (canadacentral)</td><td>The voice — streaming Neural TTS (gapless), lip-sync visemes, AND speech-to-text (real acoustic VAD)</td><td>en-GB-SoniaNeural · paid: see §7</td></tr>
+    <tr><td>Azure Speech (canadacentral)</td><td>The voice — streaming Neural TTS (gapless), lip-sync visemes, AND speech-to-text (real acoustic VAD)</td><td>en-GB-SoniaNeural · paid: see §8</td></tr>
     <tr><td>Android SpeechRecognizer (native)</td><td>Speech-to-text fallback if Azure STT isn't ready</td><td>Free, on-device</td></tr>
     <tr><td>Good News Network · Positive News · Optimist Daily</td><td>Uplifting news (avoid-topics filtered)</td><td>Free RSS; BBC world is fallback only</td></tr>
     <tr><td>Open-Meteo</td><td>Weather</td><td>Free, keyless</td></tr>
@@ -224,7 +224,22 @@ flowchart TD
 </section>
 
 <section>
-  <h2><span class="n">7</span>Unit economics — cost to run, per resident</h2>
+  <h2><span class="n">7</span>How much do residents actually use it? <span style="color:#6b7280;font-weight:400">(real-world evidence)</span></h2>
+  <p class="sub">The cost tiers below (1 / 2 / 5 hours a day) aren't guesses — they're anchored to published deployments and peer-reviewed studies of comparable AI voice companions in senior living and long-term care. These are <b>different products</b>, but they're the closest public evidence for how much older adults engage when given a proactive conversational companion.</p>
+  <table>
+    <tr><th>Deployment / study</th><th>Setting &amp; scale</th><th>Observed usage</th><th>Headline outcome</th></tr>
+    <tr><td><b>ElliQ</b> · Intuition Robotics + NY State Office for the Aging</td><td>800+ older adults aging in place across New York State</td><td><b>~30+ interactions/day, 6 days/week</b>; first two weeks average ~120/day, then settle to roughly half. 75%+ of interactions tied to social / physical / mental well-being.</td><td>95% of users reported <b>reduced loneliness</b></td></tr>
+    <tr><td><b>"Kathy"</b> · CloudMind × Pacific Living Centers</td><td>6 memory-care communities, Oregon · 65-day study · residents with Alzheimer's / dementia</td><td><b>Average 47.8 min/day</b> interacting; highly engaged residents up to <b>~3 hours/day</b> (singing, conversation).</td><td>Previously withdrawn residents re-engaged socially</td></tr>
+    <tr><td><b>JAMDA feasibility study</b> · Palace et al., 2026</td><td>Post-acute &amp; long-term care · self-directed phone-call companion · skilled nursing / assisted / independent living</td><td>Self-directed call model with <b>minimal staff involvement</b>; no digital literacy or special equipment required.</td><td>Feasible &amp; acceptable for mental-health engagement</td></tr>
+  </table>
+  <div class="card" style="margin-top:14px;background:#faf5ff;border-color:#e9d5ff">
+    <h4>🔎 What this means for our tiers</h4>
+    <p>Engaged daily usage clusters around <b>~45–60 min/day</b> (our <b>1-hour</b> tier — the typical case). Motivated or lonely residents commonly reach <b>2+ hours</b> (our <b>2-hour</b> tier). Residents who find it genuinely companionable — or a <b>shared device</b> serving several residents — reach <b>3+ hours</b>, which our <b>5-hour</b> tier brackets as the heavy-engagement / multi-resident ceiling. So the cost math below maps onto observed behavior, not optimism.</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">8</span>Unit economics — cost to run, per resident</h2>
   <p class="sub">What the background technology costs while a resident is <b>actively talking</b> with Maria (idle standby is ~free). Estimates at public list prices (USD, ~July 2026) — volume / committed-use discounts and shorter replies bring these down. Every other service (weather, news, Wikipedia, lyrics, poems, scripture, quotes, jokes, radio, on-device fallback) is free and adds nothing.</p>
 
   <h3 style="color:#4a2f6e">Cost per hour of active conversation <span style="color:#6b7280;font-weight:400">(~80 turns/hr)</span></h3>
@@ -248,8 +263,8 @@ flowchart TD
 </section>
 
 <section>
-  <h2><span class="n">8</span>Cutting cost as we scale</h2>
-  <p class="sub">Today's ~$1.50 / active-hour (§7) is a <b>list-price, single-device</b> figure — and ~88% of it is the Azure voice, which is exactly where the biggest levers are. Here's the path to materially lower unit cost as we go from one tablet to a fleet. (The AI "brain" is already the cheapest tier at ~10% of cost — not a target.)</p>
+  <h2><span class="n">9</span>Cutting cost as we scale</h2>
+  <p class="sub">Today's ~$1.50 / active-hour (§8) is a <b>list-price, single-device</b> figure — and ~88% of it is the Azure voice, which is exactly where the biggest levers are. Here's the path to materially lower unit cost as we go from one tablet to a fleet. (The AI "brain" is already the cheapest tier at ~10% of cost — not a target.)</p>
   <table>
     <tr><th>Lever</th><th>What it cuts</th><th>Approx. impact</th><th>Effort / when</th></tr>
     <tr><td><b>Concise replies</b></td><td>TTS (billed per character) — and latency</td><td>Fewer characters spoken = proportionally cheaper voice, and faster responses. Same change does both.</td><td>Now · free (prompt tuning)</td></tr>
@@ -274,7 +289,7 @@ flowchart TD
 </section>
 
 <section>
-  <h2><span class="n">9</span>How updates reach every device</h2>
+  <h2><span class="n">10</span>How updates reach every device</h2>
   <p class="sub">You push once from your laptop; every tablet self-updates on a quiet moment.</p>
   <div class="mermaid">
 flowchart LR
@@ -289,7 +304,7 @@ flowchart LR
 </section>
 
 <section>
-  <h2><span class="n">10</span>Reference — auto-generated from source</h2>
+  <h2><span class="n">11</span>Reference — auto-generated from source</h2>
   <p class="sub">These lists are extracted straight from the code by <code>docs/gen-map.mjs</code>, so they can't drift.
   Refresh anytime with <code>node docs/gen-map.mjs</code>.</p>
   <!-- AUTOGEN:START -->
