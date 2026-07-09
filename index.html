@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Maria — How It Works (Architecture & Data-Flow Map)</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root { --ink:#1f2430; --muted:#6b7280; --line:#e5e7eb; --accent:#6d28d9; --bg:#faf8f5; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+         color:var(--ink); background:var(--bg); line-height:1.55; }
+  header { padding:38px 32px 22px; background:linear-gradient(135deg,#2b2140,#4a2f6e); color:#fff; }
+  header h1 { margin:0 0 6px; font-size:30px; }
+  header p { margin:0; opacity:.85; max-width:820px; }
+  main { max-width:1120px; margin:0 auto; padding:28px 24px 80px; }
+  section { background:#fff; border:1px solid var(--line); border-radius:14px; padding:22px 24px; margin:22px 0;
+            box-shadow:0 1px 3px rgba(0,0,0,.04); }
+  h2 { margin:2px 0 4px; font-size:22px; color:var(--accent); }
+  h2 .n { display:inline-block; width:30px; height:30px; line-height:30px; text-align:center; background:var(--accent);
+          color:#fff; border-radius:8px; font-size:15px; margin-right:10px; vertical-align:2px; }
+  .sub { color:var(--muted); margin:0 0 16px; }
+  .mermaid { background:#fff; overflow-x:auto; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:12px; }
+  .card { border:1px solid var(--line); border-radius:10px; padding:12px 14px; background:#fcfbff; }
+  .card h4 { margin:0 0 4px; font-size:15px; }
+  .card p { margin:0; font-size:13px; color:var(--muted); }
+  table { border-collapse:collapse; width:100%; font-size:13.5px; }
+  th,td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+  th { background:#f5f3fb; color:#4a2f6e; }
+  code { background:#f3f0fa; padding:1px 5px; border-radius:5px; font-size:12.5px; }
+  .who-staff { color:#0369a1; font-weight:600; }
+  .who-res { color:#047857; font-weight:600; }
+  .who-maria { color:#b45309; font-weight:600; }
+  .who-ext { color:#9333ea; font-weight:600; }
+  .legend span { display:inline-block; margin-right:16px; font-size:13px; }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; vertical-align:1px; }
+  footer { text-align:center; color:var(--muted); font-size:12px; padding:24px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Maria — How It Works</h1>
+  <p>A visual map of what the companion can do, how information flows through it, and — importantly — <b>who
+  influences what information</b>. Each tablet is one resident's private device; everything below lives on that
+  device unless noted.</p>
+</header>
+
+<main>
+
+<section>
+  <h2><span class="n">1</span>What she can do</h2>
+  <p class="sub">Capabilities, grouped. Each is either a live conversation skill, a proactive behaviour, or a staff tool.</p>
+  <div class="grid">
+    <div class="card"><h4>💬 Natural conversation</h4><p>Warm, short spoken replies via Claude, tuned for older adults; remembers the person across turns and days.</p></div>
+    <div class="card"><h4>📖 Life-story reminiscence</h4><p>Gently walks through life chapters, captures memories, comforts on grief, exits on distress.</p></div>
+    <div class="card"><h4>🗓️ "What's on today"</h4><p>Daily routine + schedule (upcoming only), then invites other activities.</p></div>
+    <div class="card"><h4>🎛️ Tools</h4><p>Weather, positive news, jokes, quotes, Wikipedia facts, song lyrics, poems, scripture, "on this day", web search.</p></div>
+    <div class="card"><h4>📻 Music &amp; radio</h4><p>Plays internet radio / old songs; tap to stop.</p></div>
+    <div class="card"><h4>📷 Family photos</h4><p>Shows &amp; talks about photos; weaves a new photo into the chat right away and asks if they'd like to see it.</p></div>
+    <div class="card"><h4>💊 Medication reminders</h4><p>Chime + on-screen card + gentle spoken line, at set times (time-critical, can interrupt).</p></div>
+    <div class="card"><h4>🔁 Proactive routines</h4><p>Scheduled trivia / news / music / check-ins / life-story chats — delivered only on a natural lull.</p></div>
+    <div class="card"><h4>🛡️ Guardrails</h4><p>No medical advice, crisis/emergency detection, avoid-topics honoured (incl. filtering the news) — with an optional "allow if the resident asks" override.</p></div>
+    <div class="card"><h4>😴 Reads the room</h4><p>"I'm resting / don't want to talk / good night" → goes quiet; offers rest on subtle cues.</p></div>
+    <div class="card"><h4>📊 Staff insight</h4><p>Wellbeing notes, conversation history, "what I've learned", life-story book (PDF).</p></div>
+    <div class="card"><h4>🚀 Remote updates</h4><p>New logic/prompts pushed over-the-air; auto-applies on idle. No cable.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">2</span>System overview — the pieces &amp; where they run</h2>
+  <p class="sub">The app is a cascade: speech-to-text → the "brain" (Claude) → text-to-speech, plus tools and on-device storage.</p>
+  <div class="mermaid">
+flowchart LR
+  R(("👵 Resident<br/>(voice)"))
+  subgraph DEV["📱 Tablet app  (Expo / React Native, runs pinned)"]
+    direction TB
+    STT["🎙️ Speech-to-text<br/><b>on-device SODA</b><br/>(free, private)"]
+    LOOP["🔁 Conversation loop<br/>(turn-taking, guardrails,<br/>proactive on lull)"]
+    BRAIN["🧠 The Brain<br/><b>Claude</b> Haiku / Sonnet<br/>+ tools + memory"]
+    TTS["🔊 Text-to-speech<br/><b>Azure voice</b><br/>(avatar lip-sync or orb)"]
+    STORE[("💾 On-device stores<br/>profile · memories · life story ·<br/>schedule · meds · photos · logs")]
+    STAFFUI["🔧 Staff screen<br/>(PIN-locked)"]
+  end
+  subgraph EXT["☁️ External services (only when a tool is used)"]
+    direction TB
+    ANTH["Anthropic (Claude)"]
+    AZ["Azure Speech"]
+    APIS["Weather · Positive news · Wikipedia ·<br/>Lyrics · Poems · Scripture · Quotes ·<br/>Jokes · Radio · Web search"]
+  end
+  R -->|"talks"| STT --> LOOP --> BRAIN --> TTS -->|"speaks"| R
+  BRAIN <-->|"prompt + reply"| ANTH
+  TTS <-->|"synth audio"| AZ
+  BRAIN -->|"tool calls"| APIS
+  BRAIN <-->|"read context /<br/>write learnings"| STORE
+  LOOP <--> STORE
+  STAFFUI -->|"writes care data"| STORE
+  </div>
+  <p class="sub" style="margin-top:12px">Speech-to-text runs <b>on the device</b> (private, free). Only the brain, the voice, and tool
+  look-ups touch the internet. All the resident's personal data stays in the on-device stores.</p>
+</section>
+
+<section>
+  <h2><span class="n">3</span>Who influences what information</h2>
+  <p class="sub">The heart of it: four kinds of author write into the on-device stores, and those stores assemble into Maria's brain each turn.</p>
+  <div class="legend">
+    <span><span class="dot" style="background:#0369a1"></span><b>Staff / family</b> set it up</span>
+    <span><span class="dot" style="background:#047857"></span><b>Resident</b> (by talking)</span>
+    <span><span class="dot" style="background:#b45309"></span><b>Maria</b> (learns &amp; writes)</span>
+    <span><span class="dot" style="background:#9333ea"></span><b>External</b> (live look-ups)</span>
+  </div>
+  <div class="mermaid">
+flowchart TD
+  STAFF["🔧 STAFF / FAMILY"]:::staff
+  RES["👵 RESIDENT (speaks)"]:::res
+  MARIA["🧠 MARIA (Claude)"]:::maria
+  EXT["☁️ EXTERNAL APIs"]:::ext
+
+  STAFF --> PROF["Resident Profile"]:::store
+  STAFF --> TOP["Topics: likes / <b>avoid</b>"]:::store
+  STAFF --> ROUT["Daily Routine"]:::store
+  STAFF --> SCHED["Today's Schedule"]:::store
+  STAFF --> MEDS["Medications"]:::store
+  STAFF --> PHOTOS["Family Photos"]:::store
+  STAFF --> PROMPTS["'Ask them about…' prompts"]:::store
+
+  RES -->|"speaks"| CONV["Conversation History"]:::store
+  MARIA -->|"extracts (batched)"| MEM["Memories ('What I've learned')"]:::store
+  MARIA -->|"extracts"| LIFE["Life Story (by chapter)"]:::store
+  MARIA -->|"flags mood / pain / etc."| SIG["Wellbeing Notes"]:::store
+  RES -.->|"influences"| MEM
+  RES -.->|"influences"| LIFE
+  RES -.->|"influences"| SIG
+
+  PROF --> BRAIN{{"🧠 Maria's system prompt<br/>(rebuilt every turn)"}}:::brain
+  TOP --> BRAIN
+  ROUT --> BRAIN
+  SCHED --> BRAIN
+  PHOTOS --> BRAIN
+  PROMPTS --> BRAIN
+  MEM --> BRAIN
+  LIFE --> BRAIN
+  MEDS -->|"time-based, not prompt"| LOOP2["🔁 Loop (reminders)"]:::loop
+  SIG -->|"staff-only, not prompt"| STAFFVIEW["🔧 Staff review"]:::staff
+
+  BRAIN --> REPLY["💬 Spoken reply"]:::out
+  EXT -->|"weather, news, facts…"| REPLY
+  TOP -->|"'avoid' also filters"| EXT
+
+  classDef staff fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e;
+  classDef res fill:#d1fae5,stroke:#047857,color:#064e3b;
+  classDef maria fill:#fef3c7,stroke:#b45309,color:#7c2d12;
+  classDef ext fill:#f3e8ff,stroke:#9333ea,color:#581c87;
+  classDef store fill:#ffffff,stroke:#cbd5e1,color:#1f2937;
+  classDef brain fill:#4a2f6e,stroke:#4a2f6e,color:#ffffff;
+  classDef out fill:#fff7ed,stroke:#fb923c,color:#7c2d12;
+  classDef loop fill:#ecfeff,stroke:#0891b2,color:#164e63;
+  </div>
+  <p class="sub" style="margin-top:12px"><b>Key idea:</b> staff/family <i>set the stage</i> (who the person is, what to raise, what to avoid, the day's plan).
+  The resident <i>fills it in</i> just by talking — Maria listens and writes memories, life-story entries, and wellbeing signals.
+  Everything staff-set + Maria-learned is re-assembled into her prompt <b>every single turn</b>, so she always speaks with the
+  latest context. External look-ups only add transient facts to a reply and are never stored as "who they are."</p>
+</section>
+
+<section>
+  <h2><span class="n">4</span>What assembles the "brain" each turn</h2>
+  <p class="sub">Every reply is generated from a freshly-built prompt. Here's what goes into it (top = foundational).</p>
+  <table>
+    <tr><th>Block</th><th>Source</th><th>Author</th><th>Cached?</th></tr>
+    <tr><td>Persona + safety rules</td><td>App code</td><td><span class="who-maria">fixed</span></td><td>✅ cached</td></tr>
+    <tr><td>Who you're talking with</td><td><code>Resident Profile</code></td><td><span class="who-staff">Staff</span></td><td>✅ cached</td></tr>
+    <tr><td>What she remembers</td><td><code>Memories</code></td><td><span class="who-maria">Maria (learned)</span></td><td>✅ cached</td></tr>
+    <tr><td>Reminiscence mode + chapters covered</td><td><code>Life Story</code></td><td><span class="who-maria">Maria (learned)</span></td><td>✅ cached</td></tr>
+    <tr><td>Topics to raise / <b>avoid</b></td><td><code>Topics &amp; Triggers</code></td><td><span class="who-staff">Staff</span></td><td>✅ cached</td></tr>
+    <tr><td>What's on today (upcoming)</td><td><code>Routine</code> + <code>Schedule</code></td><td><span class="who-staff">Staff</span></td><td>✅ cached</td></tr>
+    <tr><td>Available family photos</td><td><code>Photos</code></td><td><span class="who-staff">Staff/family</span></td><td>✅ cached</td></tr>
+    <tr><td>Current Eastern date &amp; time</td><td>Computed live</td><td><span class="who-maria">fixed</span></td><td>❌ fresh each turn</td></tr>
+  </table>
+  <p class="sub" style="margin-top:12px">The big block is <b>prompt-cached</b> (≈90% cheaper on repeat turns); only the tiny live time-stamp is re-sent
+  fresh — which is why the app stays cheap enough to leave running all day per resident.</p>
+</section>
+
+<section>
+  <h2><span class="n">5</span>One conversation turn, step by step</h2>
+  <p class="sub">From tap to reply — including the guardrails and when proactive things happen.</p>
+  <div class="mermaid">
+flowchart TD
+  A["Resident taps / speaks"] --> B["🎙️ On-device STT<br/>transcribes"]
+  B --> C{"Crisis / emergency<br/>words?"}
+  C -->|yes| C1["Reassure · press call button<br/>· log safety note"] --> LISTEN
+  C -->|no| D{"'Resting / don't<br/>want to talk'?"}
+  D -->|yes| D1["Warm sign-off → 😴 REST<br/>(silent until tapped)"]
+  D -->|no| E{"Medical advice<br/>question?"}
+  E -->|yes| E1["Redirect to a nurse<br/>· log request"] --> LISTEN
+  E -->|no| F["🧠 Claude generates reply<br/>(may call a tool)"]
+  F -->|tool| G["☁️ Weather / news / fact / …"] --> F
+  F --> H["🔊 Speak (Azure voice)"]
+  H --> I["Save exchange + queue<br/>extraction (batched)"]
+  I --> J["🧠 Background: pull memories,<br/>wellbeing signals, life-story"]
+  I --> LISTEN["👂 Listen"]
+  LISTEN -->|they speak| B
+  LISTEN -->|"quiet lull"| K{"Med due? (any time)<br/>Routine/photo due?"}
+  K -->|med| M["💊 Chime + card + line<br/>(can interrupt)"] --> LISTEN
+  K -->|"routine / photo (lull only)"| N["Gently bring it up"] --> LISTEN
+  K -->|nothing| LISTEN
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">6</span>External services — what plugs in where</h2>
+  <p class="sub">Every outside service and what it powers. Swappable; most are free and keyless.</p>
+  <table>
+    <tr><th>Service</th><th>Powers</th><th>Notes</th></tr>
+    <tr><td>Anthropic — Claude Haiku / Sonnet</td><td>The brain, background extraction, the demo "resident"</td><td>Haiku by default; Sonnet only for grief/distress</td></tr>
+    <tr><td>Azure Speech (canadacentral)</td><td>The voice — streaming Neural TTS (gapless), lip-sync visemes, AND speech-to-text (real acoustic VAD)</td><td>en-GB-SoniaNeural · paid: see §7</td></tr>
+    <tr><td>Android SpeechRecognizer (native)</td><td>Speech-to-text fallback if Azure STT isn't ready</td><td>Free, on-device</td></tr>
+    <tr><td>Good News Network · Positive News · Optimist Daily</td><td>Uplifting news (avoid-topics filtered)</td><td>Free RSS; BBC world is fallback only</td></tr>
+    <tr><td>Open-Meteo</td><td>Weather</td><td>Free, keyless</td></tr>
+    <tr><td>Wikipedia · lyrics.ovh · PoetryDB · bible-api · quotable · icanhazdadjoke</td><td>Facts · song lyrics · poems · scripture · quotes · jokes</td><td>Free</td></tr>
+    <tr><td>radio-browser.info</td><td>Internet radio / music</td><td>Free</td></tr>
+    <tr><td>Tavily</td><td>General web search (last resort)</td><td>Keyed</td></tr>
+    <tr><td>EAS Update (Expo)</td><td>Over-the-air updates to every tablet</td><td>JS/logic only; native changes need a rebuild</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2><span class="n">7</span>Unit economics — cost to run, per resident</h2>
+  <p class="sub">What the background technology costs while a resident is <b>actively talking</b> with Maria (idle standby is ~free). Estimates at public list prices (USD, ~July 2026) — volume / committed-use discounts and shorter replies bring these down. Every other service (weather, news, Wikipedia, lyrics, poems, scripture, quotes, jokes, radio, on-device fallback) is free and adds nothing.</p>
+
+  <h3 style="color:#4a2f6e">Cost per hour of active conversation <span style="color:#6b7280;font-weight:400">(~80 turns/hr)</span></h3>
+  <table>
+    <tr><th>Service</th><th>What drives it</th><th>Assumption</th><th>~ $ / active hour</th></tr>
+    <tr><td>Azure Neural TTS <span style="color:#6b7280">(voice out)</span></td><td>Characters synthesized</td><td>~600 chars/reply × 80 ≈ 48k chars/hr @ $16 / 1M chars</td><td>~$0.77</td></tr>
+    <tr><td>Azure Speech-to-Text <span style="color:#6b7280">(voice in)</span></td><td>Audio-hours recognized</td><td>mic active ~55% of the hour @ $1 / audio-hr</td><td>~$0.55</td></tr>
+    <tr><td>Anthropic Claude <span style="color:#6b7280">(the brain)</span></td><td>Tokens in/out, prompt-cached</td><td>cached reads + ~140-token replies + batched memory extraction (Haiku)</td><td>~$0.15</td></tr>
+    <tr><td>Tavily web search + misc</td><td>Occasional lookups</td><td>~5 searches/hr @ ~$0.008</td><td>~$0.03</td></tr>
+    <tr><td style="font-weight:700">Total</td><td colspan="2" style="color:#6b7280">Voice I/O (Azure) is ~88% of the cost — the AI "brain" is the cheap part.</td><td style="font-weight:700">≈ $1.50 / hr</td></tr>
+  </table>
+
+  <h3 style="color:#4a2f6e;margin-top:18px">Per resident, by daily usage</h3>
+  <table>
+    <tr><th>Active use</th><th>Per day</th><th>Per month <span style="color:#6b7280;font-weight:400">(~30 d)</span></th><th>Per year</th></tr>
+    <tr><td>1 hour / day</td><td>~$1.50</td><td>~$45</td><td>~$550</td></tr>
+    <tr><td>2 hours / day</td><td>~$3.00</td><td>~$90</td><td>~$1,095</td></tr>
+    <tr><td>5 hours / day</td><td>~$7.50</td><td>~$225</td><td>~$2,740</td></tr>
+  </table>
+  <p class="sub" style="margin-top:12px">The two biggest cost levers: <b>(1) reply length</b> — shorter replies cut both TTS and Claude at once — and <b>(2) moving speech-to-text on-device</b>, which would remove the ~$0.55/hr STT line entirely. Not included: one-time tablet hardware, cellular/Wi-Fi data, and the flat EAS Update (OTA) subscription (negligible per resident). Prices drift downward over time as model &amp; voice costs fall.</p>
+</section>
+
+<section>
+  <h2><span class="n">8</span>How updates reach every device</h2>
+  <p class="sub">You push once from your laptop; every tablet self-updates on a quiet moment.</p>
+  <div class="mermaid">
+flowchart LR
+  DEV2["💻 You<br/>edit + <code>eas update</code>"] --> CLOUD["☁️ EAS Update<br/>(branch: production)"]
+  CLOUD --> T1["📱 Tablet A"]
+  CLOUD --> T2["📱 Tablet B"]
+  CLOUD --> T3["📱 Tablet …"]
+  T1 -.->|"checks on launch +<br/>every 15 min"| APPLY1["Applies on idle<br/>(never mid-chat)"]
+  note["JS / prompts / logic → over-the-air.<br/>New native module / permission → one cable install, then OTA again."]:::n
+  classDef n fill:#fffbeb,stroke:#f59e0b,color:#78350f;
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">9</span>Reference — auto-generated from source</h2>
+  <p class="sub">These lists are extracted straight from the code by <code>docs/gen-map.mjs</code>, so they can't drift.
+  Refresh anytime with <code>node docs/gen-map.mjs</code>.</p>
+  <!-- AUTOGEN:START -->
+
+  <p class="sub"><b>Auto-generated 2026-07-08</b> from <code>src/</code> — do not hand-edit; run <code>node docs/gen-map.mjs</code>.</p>
+  <h3 style="color:#4a2f6e">Tools the brain can call (15)</h3>
+  <table><tr><th>Tool</th><th>Description</th></tr>
+    <tr><td><code>web_search</code></td><td>General internet search — use ONLY when no more specific tool fits, for current or real-time information (recent events, prices, local details, anything you're unsure of).</td></tr>
+    <tr><td><code>get_weather</code></td><td>Get the current weather and today's forecast for a place. Use when the person asks about the weather.</td></tr>
+    <tr><td><code>on_this_day</code></td><td>Get notable historical events that happened on today's date — lovely for sparking memories and conversation.</td></tr>
+    <tr><td><code>tell_joke</code></td><td>Get a short, clean, family-friendly joke. Use when the person could use a laugh.</td></tr>
+    <tr><td><code>get_quote</code></td><td>Get an inspiring or thoughtful quote to share.</td></tr>
+    <tr><td><code>look_up_topic</code></td><td>Look up a short, reliable summary about a person, place, event, or thing (Wikipedia). Use for factual questions like 'tell me about Winston Churchill' or 'what is the Eiffel Tower'.</td></tr>
+    <tr><td><code>get_lyrics</code></td><td>Get the words to a song for a sing-along or to reminisce. Use when the person mentions a song or wants to sing.</td></tr>
+    <tr><td><code>get_poem</code></td><td>Get a classic public-domain poem to read aloud (older poets — Wordsworth, Kipling, Dickinson, Tennyson, etc.). Optionally by title or author; otherwise a random one. NOTE: it does NOT have 20th-century poets like Robert Frost, Maya Angelou, etc. — if they ask for one of those, or a specific poem you already know well, just recite it warmly from your own memory instead of using this tool.</td></tr>
+    <tr><td><code>get_scripture</code></td><td>Get a Bible passage or comforting verse to share. Optionally a reference like 'Psalm 23' or 'John 3:16'; otherwise a comforting verse. For residents who find comfort in scripture.</td></tr>
+    <tr><td><code>get_news</code></td><td>Get the top world news headlines. Use when the person asks what's happening in the news or about current events.</td></tr>
+    <tr><td><code>play_radio</code></td><td>Play internet radio for the person — music OR news/talk radio. Use when they ask to hear music (a song style, era, or artist: 'put on some Frank Sinatra', 'play swing music', 'some classical') OR to hear the news / talk radio ('put on the news', 'is there a news station', 'some talk radio'). Pass a genre/category when you can ('news', 'talk', 'crooners', 'big band', 'classical', '1950s', 'country gospel') — those find stations more reliably than a specific artist or program. If it returns not_found, call again with a broader category. While it plays, the screen shows a music view and the person taps it to stop — tell them so.</td></tr>
+    <tr><td><code>stop_radio</code></td><td>Stop the radio music that's currently playing. Use when the person asks to turn it off or stop the music.</td></tr>
+    <tr><td><code>show_family_photo</code></td><td>Show one of the person's family photos on the screen and talk about it warmly. Use when they ask to see a photo, or when talking about family/loved ones and a photo would bring them joy (especially while reminiscing). Pass a short description of which one, matching the list of available photos. Only call this if photos are actually available. After showing it, describe it warmly using what you know about who and what is in it.</td></tr>
+    <tr><td><code>close_family_photo</code></td><td>Put away / close the family photo currently on the screen. Use when the person asks to close it or put it away, when they're done looking at it, or when the conversation moves on to something else.</td></tr>
+    <tr><td><code>rest_quietly</code></td><td>Go quiet and let the resident rest. Call this ONLY once they have made clear they'd like you to stop for now — either directly, or by accepting your gentle offer to go quiet. Before calling it, give a short warm sign-off (e.g. &quot;Of course — I'll be right here whenever you want me. You rest now.&quot;). Do NOT call it just because they went briefly quiet; when you only SENSE they might be winding down, offer first and wait for their answer.</td></tr>
+  </table>
+  <h3 style="color:#4a2f6e;margin-top:18px">On-device stores (17)</h3>
+  <table><tr><th>Storage key</th><th>Defined in</th></tr>
+    <tr><td><code>companion.agenda.v1</code></td><td>routine.ts</td></tr>
+    <tr><td><code>companion.conversation.v1</code></td><td>conversation.ts</td></tr>
+    <tr><td><code>companion.debug.v1</code></td><td>debug.ts</td></tr>
+    <tr><td><code>companion.lifestory.consent.v1</code></td><td>lifeStory.ts</td></tr>
+    <tr><td><code>companion.lifestory.v1</code></td><td>lifeStory.ts</td></tr>
+    <tr><td><code>companion.listening.v1</code></td><td>listening.ts</td></tr>
+    <tr><td><code>companion.medications.v1</code></td><td>medications.ts</td></tr>
+    <tr><td><code>companion.memories.v1</code></td><td>memory.ts</td></tr>
+    <tr><td><code>companion.observations.v1</code></td><td>observations.ts</td></tr>
+    <tr><td><code>companion.photos.v1</code></td><td>photos.ts</td></tr>
+    <tr><td><code>companion.profile.v1</code></td><td>profile.ts</td></tr>
+    <tr><td><code>companion.resident.name.v1</code></td><td>lifeStory.ts</td></tr>
+    <tr><td><code>companion.routine.v1</code></td><td>routine.ts</td></tr>
+    <tr><td><code>companion.schedule.v2</code></td><td>routine.ts</td></tr>
+    <tr><td><code>companion.settings.avatar</code></td><td>settings.ts</td></tr>
+    <tr><td><code>companion.storyprompts.v1</code></td><td>storyPrompts.ts</td></tr>
+    <tr><td><code>companion.topics.v1</code></td><td>topics.ts</td></tr>
+  </table>
+  <h3 style="color:#4a2f6e;margin-top:18px">External endpoints (20)</h3>
+  <table><tr><th>Host</th><th>Used by</th></tr>
+    <tr><td><code>{region}.tts.speech.microsoft.com</code></td><td>tts.ts</td></tr>
+    <tr><td><code>api.anthropic.com</code></td><td>guardrail.ts, llm.ts</td></tr>
+    <tr><td><code>api.elevenlabs.io</code></td><td>tts.ts</td></tr>
+    <tr><td><code>api.lyrics.ovh</code></td><td>llm.ts</td></tr>
+    <tr><td><code>api.open-meteo.com</code></td><td>llm.ts</td></tr>
+    <tr><td><code>api.quotable.io</code></td><td>llm.ts</td></tr>
+    <tr><td><code>api.tavily.com</code></td><td>llm.ts</td></tr>
+    <tr><td><code>bible-api.com</code></td><td>llm.ts</td></tr>
+    <tr><td><code>cdn.jsdelivr.net</code></td><td>Avatar3DWeb.tsx</td></tr>
+    <tr><td><code>de1.api.radio-browser.info</code></td><td>radio.ts</td></tr>
+    <tr><td><code>en.wikipedia.org</code></td><td>llm.ts</td></tr>
+    <tr><td><code>feeds.bbci.co.uk</code></td><td>llm.ts</td></tr>
+    <tr><td><code>geocoding-api.open-meteo.com</code></td><td>llm.ts</td></tr>
+    <tr><td><code>icanhazdadjoke.com</code></td><td>llm.ts</td></tr>
+    <tr><td><code>localhost</code></td><td>Avatar3DWeb.tsx</td></tr>
+    <tr><td><code>opentdb.com</code></td><td>llm.ts</td></tr>
+    <tr><td><code>poetrydb.org</code></td><td>llm.ts</td></tr>
+    <tr><td><code>www.goodnewsnetwork.org</code></td><td>llm.ts</td></tr>
+    <tr><td><code>www.optimistdaily.com</code></td><td>llm.ts</td></tr>
+    <tr><td><code>www.positive.news</code></td><td>llm.ts</td></tr>
+  </table>
+  <!-- AUTOGEN:END -->
+</section>
+
+</main>
+<footer>Maria architecture map · <b>last updated 2026-07-08</b> · kept in sync whenever capabilities, data flow,
+tools, stores, or endpoints change · every tablet is one resident's private device.</footer>
+
+<script>
+  mermaid.initialize({ startOnLoad:true, theme:"base", themeVariables:{
+    fontFamily:"-apple-system,Segoe UI,Roboto,sans-serif", primaryColor:"#efe9fb",
+    primaryBorderColor:"#6d28d9", primaryTextColor:"#1f2430", lineColor:"#9ca3af" }, securityLevel:"loose" });
+</script>
+</body>
+</html>
