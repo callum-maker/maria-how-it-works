@@ -248,7 +248,24 @@ flowchart TD
 </section>
 
 <section>
-  <h2><span class="n">8</span>How updates reach every device</h2>
+  <h2><span class="n">8</span>Cutting cost as we scale</h2>
+  <p class="sub">Today's ~$1.50 / active-hour (§7) is a <b>list-price, single-device</b> figure — and ~88% of it is the Azure voice, which is exactly where the biggest levers are. Here's the path to materially lower unit cost as we go from one tablet to a fleet. (The AI "brain" is already the cheapest tier at ~10% of cost — not a target.)</p>
+  <table>
+    <tr><th>Lever</th><th>What it cuts</th><th>Approx. impact</th><th>Effort / when</th></tr>
+    <tr><td><b>Concise replies</b></td><td>TTS (billed per character) — and latency</td><td>Fewer characters spoken = proportionally cheaper voice, and faster responses. Same change does both.</td><td>Now · free (prompt tuning)</td></tr>
+    <tr><td><b>Azure committed-use pricing</b></td><td>TTS + STT</td><td>Roughly <b>40–60% off</b> Azure's pay-as-you-go rates at committed volume</td><td>At fleet scale · contract, no code</td></tr>
+    <tr><td><b>Deepgram for speech-to-text</b></td><td>STT (listening)</td><td>~<b>halves</b> the STT line (~$0.55 → ~$0.30 / hr)</td><td>Medium · provider migration</td></tr>
+    <tr><td><b>On-device speech-to-text</b></td><td>STT → ~$0</td><td>Removes the listening cost entirely (Whisper/Vosk on the tablet)</td><td>Longer-term · R&amp;D (reliability / battery tradeoffs)</td></tr>
+    <tr><td><b>Cache stock phrases</b></td><td>TTS</td><td>Greetings, med reminders, check-ins are spoken often → synthesize once, reuse the audio</td><td>Low effort</td></tr>
+  </table>
+  <div class="card" style="margin-top:14px;background:#f0fdf4;border-color:#bbf7d0">
+    <h4>📉 Trajectory</h4>
+    <p style="color:#166534">Today ~$1.50 / hr (list price, one device) → with concise replies + committed-use pricing, a realistic target is <b>well under $1.00 / active-hour</b> at fleet scale → with on-device STT, lower still. And this is <em>active-conversation</em> cost only — idle standby is ~free, so real per-resident spend tracks actual usage.</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">9</span>How updates reach every device</h2>
   <p class="sub">You push once from your laptop; every tablet self-updates on a quiet moment.</p>
   <div class="mermaid">
 flowchart LR
@@ -263,7 +280,7 @@ flowchart LR
 </section>
 
 <section>
-  <h2><span class="n">9</span>Reference — auto-generated from source</h2>
+  <h2><span class="n">10</span>Reference — auto-generated from source</h2>
   <p class="sub">These lists are extracted straight from the code by <code>docs/gen-map.mjs</code>, so they can't drift.
   Refresh anytime with <code>node docs/gen-map.mjs</code>.</p>
   <!-- AUTOGEN:START -->
