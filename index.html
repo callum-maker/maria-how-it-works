@@ -212,8 +212,9 @@ flowchart TD
   <table>
     <tr><th>Service</th><th>Powers</th><th>Notes</th></tr>
     <tr><td>Anthropic — Claude Haiku / Sonnet</td><td>The brain, background extraction, the demo "resident"</td><td>Haiku by default; Sonnet only for grief/distress</td></tr>
-    <tr><td>Azure Speech (canadacentral)</td><td>The voice — streaming Neural TTS (gapless), lip-sync visemes, AND speech-to-text (real acoustic VAD)</td><td>en-GB-SoniaNeural · paid: see §8</td></tr>
-    <tr><td>Android SpeechRecognizer (native)</td><td>Speech-to-text fallback if Azure STT isn't ready</td><td>Free, on-device</td></tr>
+    <tr><td>Azure Speech (canadacentral)</td><td>The voice — streaming Neural TTS (gapless) and lip-sync visemes</td><td>en-GB-SoniaNeural · paid: see §8</td></tr>
+    <tr><td>Deepgram — Nova-3</td><td>Speech-to-text (streaming, real-time turn detection)</td><td>Keyed · ~$0.20/active hr, see §8</td></tr>
+    <tr><td>Silero VAD + Smart Turn v3</td><td>Acoustic end-of-turn detection (when the resident has finished speaking)</td><td>Local, on the server</td></tr>
     <tr><td>Good News Network · Positive News · Optimist Daily</td><td>Uplifting news (avoid-topics filtered)</td><td>Free RSS; BBC world is fallback only</td></tr>
     <tr><td>Open-Meteo</td><td>Weather</td><td>Free, keyless</td></tr>
     <tr><td>Wikipedia · lyrics.ovh · PoetryDB · bible-api · quotable · icanhazdadjoke</td><td>Facts · song lyrics · poems · scripture · quotes · jokes</td><td>Free</td></tr>
@@ -245,21 +246,21 @@ flowchart TD
   <h3 style="color:#4a2f6e">Cost per hour of active conversation <span style="color:#6b7280;font-weight:400">(~80 turns/hr, concise replies)</span></h3>
   <table>
     <tr><th>Component</th><th>Current</th><th>Realistic</th><th>Ambitious</th></tr>
-    <tr><td>Speech-to-text <span style="color:#6b7280">(voice in)</span></td><td>Azure STT<br><b>~$0.55</b></td><td>Deepgram Nova-3<br><b>~$0.20</b></td><td>self-hosted Whisper<br><b>~$0.08</b></td></tr>
+    <tr><td>Speech-to-text <span style="color:#6b7280">(voice in)</span></td><td>Deepgram Nova-3<br><b>~$0.20</b></td><td>Deepgram Nova-3<br><b>~$0.20</b></td><td>self-hosted Whisper<br><b>~$0.08</b></td></tr>
     <tr><td>Text-to-speech <span style="color:#6b7280">(voice out)</span></td><td>Azure Neural (concise)<br><b>~$0.20</b></td><td>Azure committed + cached phrases<br><b>~$0.12</b></td><td>self-hosted neural voice<br><b>~$0.03</b></td></tr>
     <tr><td>Brain <span style="color:#6b7280">(LLM)</span></td><td>Claude Haiku, cached + capped<br><b>~$0.08</b></td><td>Haiku, cached<br><b>~$0.07</b></td><td>cheaper / self-hosted model<br><b>~$0.03</b></td></tr>
     <tr><td>Transport <span style="color:#6b7280">(LiveKit)</span></td><td>~$0.03</td><td>~$0.02</td><td>~$0.01</td></tr>
     <tr><td>Server hosting</td><td>~$0.05</td><td>~$0.03</td><td>~$0.02</td></tr>
-    <tr><td style="font-weight:700">Total / active hour</td><td style="font-weight:700">≈ $0.90</td><td style="font-weight:700;color:#2563eb">≈ $0.45</td><td style="font-weight:700;color:#b45309">≈ $0.18</td></tr>
+    <tr><td style="font-weight:700">Total / active hour</td><td style="font-weight:700">≈ $0.55</td><td style="font-weight:700;color:#2563eb">≈ $0.45</td><td style="font-weight:700;color:#b45309">≈ $0.18</td></tr>
   </table>
-  <p class="sub" style="margin-top:8px">Speech in &amp; out is still the bulk of the bill — which is exactly where the biggest levers are (§9). The brain is already the cheap part: <b>concise replies</b> (short, capped answers) and <b>prompt caching</b> are both live today, cutting the voice and token bills at once and speeding responses up.</p>
+  <p class="sub" style="margin-top:8px">Voice — speech in and out — is still the bulk of the bill, which is exactly where the levers are (§9). We've already pulled the biggest one: speech-to-text now runs on <b>Deepgram Nova-3</b> (switched from Azure), roughly a third the cost and faster to respond. The brain is the cheap part — <b>concise replies</b> (short, capped answers) and <b>prompt caching</b> are live today, trimming the token and voice bills at once.</p>
 
   <h3 style="color:#4a2f6e;margin-top:18px">Per resident, by daily usage <span style="color:#6b7280;font-weight:400">(~30 days/month)</span></h3>
   <table>
-    <tr><th>Active use</th><th>Current <span style="color:#6b7280;font-weight:400">(~$0.90/hr)</span></th><th>Realistic <span style="color:#6b7280;font-weight:400">(~$0.45/hr)</span></th><th>Ambitious <span style="color:#6b7280;font-weight:400">(~$0.18/hr)</span></th></tr>
-    <tr><td>1 hour / day</td><td>$27 /mo · $329 /yr</td><td>$13.50 /mo · $164 /yr</td><td>$5.40 /mo · $66 /yr</td></tr>
-    <tr><td>2 hours / day</td><td>$54 /mo · $657 /yr</td><td>$27 /mo · $329 /yr</td><td>$10.80 /mo · $131 /yr</td></tr>
-    <tr><td>5 hours / day</td><td>$135 /mo · $1,643 /yr</td><td>$67.50 /mo · $821 /yr</td><td>$27 /mo · $329 /yr</td></tr>
+    <tr><th>Active use</th><th>Current <span style="color:#6b7280;font-weight:400">(~$0.55/hr)</span></th><th>Realistic <span style="color:#6b7280;font-weight:400">(~$0.45/hr)</span></th><th>Ambitious <span style="color:#6b7280;font-weight:400">(~$0.18/hr)</span></th></tr>
+    <tr><td>1 hour / day</td><td>$16.50 /mo · $201 /yr</td><td>$13.50 /mo · $164 /yr</td><td>$5.40 /mo · $66 /yr</td></tr>
+    <tr><td>2 hours / day</td><td>$33 /mo · $402 /yr</td><td>$27 /mo · $329 /yr</td><td>$10.80 /mo · $131 /yr</td></tr>
+    <tr><td>5 hours / day</td><td>$82.50 /mo · $1,004 /yr</td><td>$67.50 /mo · $821 /yr</td><td>$27 /mo · $329 /yr</td></tr>
   </table>
   <p class="sub" style="margin-top:12px"><b>Flat infrastructure (not per-resident):</b> LiveKit Cloud is free at demo volume and pennies at scale; the server host is ~$5–20/month and serves many residents at once — both round to ~$0 per resident. Not included: the resident's tablet (one-time, inexpensive) and Wi-Fi. All figures are <em>active-conversation</em> hours only, so real spend tracks actual usage.</p>
 </section>
@@ -269,12 +270,12 @@ flowchart TD
   <p class="sub">The same three scenarios, as a path. Most of the first drop is <em>already banked</em> (concise replies + caching are live); the rest is contained vendor swaps and, at the far end, self-hosting the models on your own compute.</p>
 
   <div class="card" style="margin-top:12px">
-    <h4>✅ Current — ~$0.90 / active hr <span style="color:#6b7280;font-weight:400">(live today)</span></h4>
-    <p>Azure speech-to-text + Azure Neural voice + Claude Haiku, running server-side and delivered over LiveKit. <b>Concise replies</b> and <b>prompt caching</b> are already on — they trim the voice and brain bills versus a naive setup and make her faster. This is what runs right now.</p>
+    <h4>✅ Current — ~$0.55 / active hr <span style="color:#6b7280;font-weight:400">(live today)</span></h4>
+    <p><b>Deepgram Nova-3</b> speech-to-text + Azure Neural voice + Claude Haiku, running server-side and delivered over LiveKit. <b>Concise replies</b> and <b>prompt caching</b> are on, and we've already moved speech-to-text from Azure to <b>Deepgram</b> — which cut the biggest line by roughly two-thirds and made her quicker to answer. This is what runs right now.</p>
   </div>
   <div class="card" style="margin-top:12px">
     <h4>🎯 Realistic — ~$0.45 / active hr <span style="color:#6b7280;font-weight:400">(near-term, contained work)</span></h4>
-    <p><b>Deepgram Nova-3</b> for speech-to-text — roughly halves the single biggest line, and it's one provider swap. <b>Azure committed-use pricing</b> on the voice — ~40–60% off at volume, a purchasing decision with zero code. <b>Cache stock phrases</b> — greetings, med reminders, and check-ins are synthesized once and replayed. None of these change the product experience.</p>
+    <p>The speech-to-text swap is <em>already banked</em> (Deepgram is live — see Current), so the remaining near-term levers are on the <b>voice</b>: <b>Azure committed-use pricing</b> — ~40–60% off at volume, a purchasing decision with zero code — and <b>caching stock phrases</b> so greetings, med reminders, and check-ins are synthesized once and replayed. Neither changes the product experience; together they take the ~$0.55 down to ~$0.45.</p>
   </div>
   <div class="card" style="margin-top:12px">
     <h4>🚀 Ambitious — ~$0.18 / active hr <span style="color:#6b7280;font-weight:400">(self-hosting)</span></h4>
@@ -283,15 +284,15 @@ flowchart TD
 
   <h3 style="color:#4a2f6e;margin-top:18px">The whole picture, per resident</h3>
   <table>
-    <tr><th>Active use</th><th>Current <span style="color:#6b7280;font-weight:400">(~$0.90/hr)</span></th><th>Realistic <span style="color:#6b7280;font-weight:400">(~$0.45/hr)</span></th><th>Ambitious <span style="color:#6b7280;font-weight:400">(~$0.18/hr)</span></th></tr>
-    <tr><td>1 hr / day</td><td>$27 /mo · $329 /yr</td><td>$13.50 /mo · $164 /yr</td><td>$5.40 /mo · $66 /yr</td></tr>
-    <tr><td>2 hr / day</td><td>$54 /mo · $657 /yr</td><td>$27 /mo · $329 /yr</td><td>$10.80 /mo · $131 /yr</td></tr>
-    <tr><td>5 hr / day</td><td>$135 /mo · $1,643 /yr</td><td>$67.50 /mo · $821 /yr</td><td>$27 /mo · $329 /yr</td></tr>
+    <tr><th>Active use</th><th>Current <span style="color:#6b7280;font-weight:400">(~$0.55/hr)</span></th><th>Realistic <span style="color:#6b7280;font-weight:400">(~$0.45/hr)</span></th><th>Ambitious <span style="color:#6b7280;font-weight:400">(~$0.18/hr)</span></th></tr>
+    <tr><td>1 hr / day</td><td>$16.50 /mo · $201 /yr</td><td>$13.50 /mo · $164 /yr</td><td>$5.40 /mo · $66 /yr</td></tr>
+    <tr><td>2 hr / day</td><td>$33 /mo · $402 /yr</td><td>$27 /mo · $329 /yr</td><td>$10.80 /mo · $131 /yr</td></tr>
+    <tr><td>5 hr / day</td><td>$82.50 /mo · $1,004 /yr</td><td>$67.50 /mo · $821 /yr</td><td>$27 /mo · $329 /yr</td></tr>
   </table>
 
   <div class="card" style="margin-top:14px;background:#f0fdf4;border-color:#bbf7d0">
     <h4>📉 Trajectory</h4>
-    <p style="color:#166534">Roughly <b>$0.90 → $0.45 → $0.18</b> per active hour, current → realistic → ambitious — about a <b>5× reduction</b> end-to-end, and the first big cut (concise + caching) is <em>already in place</em>. Infrastructure (LiveKit + hosting) stays a rounding error the whole way; the AI services are the entire story, and they get cheaper every quarter. Because it's <em>active-conversation only</em>, a resident who chats ~2 hours a day lands around <b>$54/month today → ~$11/month</b> at the ambitious end.</p>
+    <p style="color:#166534">Roughly <b>$0.55 → $0.45 → $0.18</b> per active hour, current → realistic → ambitious — about a <b>3× reduction</b> still ahead, on top of the cuts <em>already banked</em>: concise replies, prompt caching, and the move to Deepgram speech-to-text are all live, which is why "current" already sits close to "realistic." From here it's voice optimizations (committed pricing + phrase caching), then self-hosting the models. Infrastructure (LiveKit + hosting) stays a rounding error the whole way; the AI services are the entire story, and they get cheaper every quarter. Because it's <em>active-conversation only</em>, a resident who chats ~2 hours a day lands around <b>$33/month today → ~$11/month</b> at the ambitious end.</p>
   </div>
 </section>
 
